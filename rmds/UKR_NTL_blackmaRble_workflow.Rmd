@@ -33,8 +33,9 @@ library(terra)
 
 write_batch <-  c(T,F)[1] # toggle 1 for write outputs, 2 for no outputs
 
-h5_filenames <- list.files("ntl_h5/",pattern = "\\.h5$")
-h5_paths <- list.files("ntl_h5/", full.names = T,pattern = "\\.h5$")
+h5_filenames <- list.files(here::here("ntl_h5/"),pattern = "\\.h5$")
+h5_paths <- list.files(here::here("ntl_h5/"), full.names = T,pattern = "\\.h5$")
+
 
 
 ntl_reprojected <- h5_paths |> 
@@ -65,7 +66,7 @@ dnb_radiance <- ntl_reprojected |>
 # dir.create("ntl_doy_tiffs")
 
 if(write_batch){
-  ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance,output = "ntl_doy_tiffs")
+  ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance,output = here::here("ntl_doy_tiffs"))
 }
 # ntl_rad_by_doy$`084`
 ```
