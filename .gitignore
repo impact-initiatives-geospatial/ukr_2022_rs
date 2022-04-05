@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+/raster/*
+/20200315_ukr_kyiv_viirs_ntl/*
+/vector/*
+/unosat_damage_analysis/*
+IMPACT_GIS.gdb
+*.html
+*.xlsx
+*.tiff
