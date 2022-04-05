@@ -1,0 +1,330 @@
+---
+title: "UKR NTL"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Data
+
+```{r}
+library(exactextractr)
+library(raster)
+library(terra)
+library(sf)
+library(tidyverse )
+library(ggridges)
+library(here)
+source("R/vnp46A_to_wgs84.R")
+```
+
+
+```{r}
+# https://db.rstudio.com/databases/postgresql/
+con <- DBI::dbConnect(RPostgres::Postgres(),
+                      # Driver   = "PostgreSQL Driver",
+                      # Server   = "postgres",
+                      dbname = "impact_db",
+                      user      = rstudioapi::askForPassword("Database user"),
+                      password      = rstudioapi::askForPassword("Database password"),
+                      port     = 5432)
+
+DBI::dbListTables(con) |> dput()
+
+admin4_oi <-  "Yavoriv"
+admin4_poi <- c("UA4614011001")
+adm4 <- st_read(dsn = con,"ukr_admbnda_adm4_sspe_20220114") 
+adm1 <- st_read(dsn = con,"ukr_admbnda_adm1_sspe_20220114") 
+ocha <- st_read(dsn = con,"ukr_adm4_ocha_1") 
+colnames(ocha) <- colnames(ocha) |> str_remove(pattern = "_1$")
+
+# st_write(obj = ocha,dsn = con,layer = "ukr_adm4_ocha")
+?DBI::dbWriteTable(conn = con,name = )
+ocha
+adm1_donetska <-  adm1 |> 
+  filter(admin1Name_en=="Donetska")
+
+# adm4$admin4Name_en
+aoi <-  adm4 |> 
+  filter(admin4Pcode ==admin4_poi) |> 
+  janitor::clean_names() 
+
+adm4 |> 
+  filter(str_detect(admin4Name_en,"Pisoc")) |> 
+  select(matches("^admin\\d+.[[eP]+."))
+
+```
+
+```{r}
+
+h5_filenames <- list.files("raster/h5/",pattern = "\\.h5$")
+h5_paths <- list.files("raster/h5/", full.names = T,pattern = "\\.h5$")
+
+
+dnbs<- h5_paths |> 
+  map(~vnp46A_to_wgs84(path =.x)) |> 
+  set_names(h5_filenames)
+
+# subset to just main band of interest for speed mosaicing
+dnb_radiance <- dnbs |> 
+  map(~.x |> subset("DNB_At_Sensor_Radiance_500m"))
+
+# dir.create("raster/geotiff/mosaics/20220329_mosaics")
+if(write_batch){
+  ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance,output = "raster/geotiff/mosaics/20220329_mosaics")
+}
+
+ntl_rad_by_doy$`043`
+as.Date(as.numeric(83), origin = '2021-12-31')
+
+if(adm=="mariupol"){
+  # feb 14  & March 13
+  mariupol_before<- terra::crop(x = ntl_rad_by_doy$`043`,y=st_bbox(adm1_donetska) |> st_as_sfc())
+  mariupol_after<- terra::crop(x = ntl_rad_by_doy$`072`,y=st_bbox(adm1_donetska) |> st_as_sfc())
+  as.Date(as.numeric(43), origin = '2021-12-31')
+  as.Date(as.numeric(72), origin = '2021-12-31')
+  # dir.create("20220315_ukr_kyiv_viirs_ntl/raster_composites/mariupol_before_after")
+  terra::writeRaster(mariupol_before,"20220315_ukr_kyiv_viirs_ntl/raster_composites/mariupol_before_after/VNP46A1.20220212.wgs84.tiff" )
+  terra::writeRaster(mariupol_after,"20220315_ukr_kyiv_viirs_ntl/raster_composites/mariupol_before_after/VNP46A1.20220313.wgs84.tiff" )
+ 
+    
+    
+  
+}
+ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance)
+
+
+
+```
+
+```{r}
+dnbs[[1]] |> names("QF_Cloud_Mask" )
+# subset to just main band of interest for speed mosaicing
+dnb_radiance <- dnbs |> 
+  map(~.x |> subset("QF_Cloud_Mask" ))
+dir.create("raster/geotiff/mosaics/cloud_test")
+mosaic_vnp46a_by_doy(dnb_radiance,output = "raster/geotiff/mosaics/cloud_test")
+```
+
+
+
+
+
+
+ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance)
+
+
+
+feb27<- terra::crop(x = ntl_rad_by_doy$`058`,y=st_bbox(adm4) |> st_as_sfc())
+feb28<- terra::crop(x = ntl_rad_by_doy$`059`,y=st_bbox(adm4) |> st_as_sfc())
+# terra::writeRaster(feb27,"feb27_wtf.tiff")
+terra::writeRaster(feb27,"feb27_wtf.tiff",overwrite=T)
+terra::writeRaster(feb28,"feb28_wtf.tiff",overwrite=T)
+plot(feb27,min=0, max=1000)
+terra::sprc
+terra_col<- ?terra::src(dnbs_by_doy$`073`)
+
+terra::mosaic(terra_col)
+terra_col |> attr()
+do.call(terra::mosaic,dnbs_by_doy$`073`)
+
+
+dnbs |> length()
+dnb_march14<- terra::mosaic(dnbs[[11]]["DNB_At_Sensor_Radiance_500m"],dnbs[[12]]["DNB_At_Sensor_Radiance_500m"])
+dnb_feb13<- terra::mosaic(dnbs[[1]]["DNB_At_Sensor_Radiance_500m"],dnbs[[2]]["DNB_At_Sensor_Radiance_500m"])
+terra::writeRaster(dnb_march14,"raster/geotiff/VNP46A1_NRT.A2022073_dnb_wgs84_mosaic.tiff")
+terra::writeRaster(dnb_feb13,"raster/geotiff/VNP46A1_NRT.A2022044_dnb_wgs84_mosaic.tiff")
+
+names(dnbs)
+names(dnbs[[1]])
+```
+
+
+
+finally morning of 20220-03-15 brdf adjusted vnp46a2 came out-- okay it is terrible.
+  
+cities
+
+```{r}
+
+
+```
+
+
+```{r postgres}
+
+# https://db.rstudio.com/databases/postgresql/
+con <- DBI::dbConnect(RPostgres::Postgres(),
+                      # Driver   = "PostgreSQL Driver",
+                      # Server   = "postgres",
+                      dbname = "impact_db",
+                      user      = rstudioapi::askForPassword("Database user"),
+                      password      = rstudioapi::askForPassword("Database password"),
+                      port     = 5432)
+
+DBI::dbListTables(con)
+
+admin4_oi <-  "Yavoriv"
+admin4_poi <- c("UA4614011001")
+adm4 <- st_read(dsn = con,"ukr_admbnda_adm4_sspe_20220114") 
+
+
+# adm4$admin4Name_en
+aoi <-  adm4 |> 
+  filter(admin4Pcode ==admin4_poi) |> 
+  janitor::clean_names() 
+
+
+
+# aoi <- st_read(dsn = con,"ukr_cities_of_interest_v1") |> select(-path)
+
+# this will change
+# ntl_raster<- raster(raster_path)
+
+
+```
+
+```{r}
+
+
+
+mar14_dnb_aoi <- exactextractr::exact_extract(dnb_march14, aoi,include_cols=c("admin4pcode",
+                                                                            "admin4name_en",
+                                                                            "admin3name_en",
+                                                                            "admin2name_en",
+                                                                            "admin1name_en")) |> 
+  bind_rows() |> 
+  mutate(date= "2022-03-14")
+
+feb13_dnb_aoi <- exactextractr::exact_extract(dnb_feb13, aoi,include_cols=c("admin4pcode",
+                                                                            "admin4name_en",
+                                                                            "admin3name_en",
+                                                                            "admin2name_en",
+                                                                            "admin1name_en")) |> 
+  bind_rows() |> 
+  mutate(date= "2022-02-14")
+
+
+  
+
+
+
+before_after <-  bind_rows(mar14_dnb_aoi,feb13_dnb_aoi)
+before_after |> 
+  ggplot(aes(x = value, y = date)) +
+  geom_density_ridges(rel_min_height = 0.01, scale=3, alpha = 0.7)+
+  labs(x="DNB Value at Sensor",y="",title = "Yavoriv: Distribution of light pixel values",subtitle = "March 14 vs Feb 13 2022")
+```
+
+
+check out quality flags
+```{r}
+dnbs[[1]] |> names()
+feb13_dnb_qf<- terra::mosaic(dnbs[[1]]["QF_DNB"  ],dnbs[[2]]["QF_DNB"  ])
+
+feb13_dnb_aoi <- exactextractr::exact_extract(feb13_dnb_qf, aoi,include_cols=c("admin4pcode",
+                                                                            "admin4name_en",
+                                                                            "admin3name_en",
+                                                                            "admin2name_en",
+                                                                            "admin1name_en")) |> 
+  bind_rows() |> 
+  mutate(date= "2022-02-14")
+# dnbs[[1]] |> names()
+feb13_dnb_cloud_qf<- terra::mosaic(dnbs[[1]]["QF_Cloud_Mask" ],dnbs[[2]]["QF_Cloud_Mask"])
+
+feb13_dnb_cloud_aoi <- exactextractr::exact_extract(feb13_dnb_cloud_qf, aoi,include_cols=c("admin4pcode",
+                                                                            "admin4name_en",
+                                                                            "admin3name_en",
+                                                                            "admin2name_en",
+                                                                            "admin1name_en")) |> 
+  bind_rows() |> 
+  mutate(date= "2022-02-14")
+feb13_dnb_cloud_aoi$value
+
+
+
+
+
+feb13_dnb_and_qfs<- terra::mosaic(dnbs[[1]][[c("DNB_At_Sensor_Radiance_500m","QF_DNB" ,"QF_Cloud_Mask" ) ]],
+                                  dnbs[[2]][[c("DNB_At_Sensor_Radiance_500m","QF_DNB" ,"QF_Cloud_Mask" ) ]]
+)
+
+#     terra::writeRaster(feb13_dnb_and_qfs,"raster/geotiff/feb13_cloud_qf.tiff")
+                                  
+dnbs[[2]][[c( "QF_Cloud_Mask" )]] |> hist()
+
+base::bitwShiftL(50)
+```
+
+
+run zonal stats
+```{r}
+
+# probably makes sense to buffer aoi polygons
+
+ntl_values_aoi <- exactextractr::exact_extract(ntl_raster, aoi,include_cols=c("admin4pcode",
+                                                                            "admin4name_en",
+                                                                            "admin3name_en",
+                                                                            "admin2name_en",
+                                                                            "admin1name_en"))
+
+ntl_values_aoi_df <- bind_rows(ntl_values_aoi)
+
+```
+
+
+plot distributions
+
+```{r}
+
+ntl_values_aoi_df <- ntl_values_aoi_df |> filter(value<1000)
+ggplot(ntl_values_aoi_df, aes(x = value, y = admin4name_en)) +
+  geom_density_ridges(rel_min_height = 0.01, scale=3, alpha = 0.7)
+
+
+
+
+
+```
+
+
+
+
+## BRDF Attempt
+- try on latest BRDF corrected imagery
+```{r ,eval=F}
+
+h5_filenames <- list.files("raster/46A2_h5//")
+h5_paths <- list.files("raster/46A2_h5/", full.names = T)
+
+dnbs<- h5_paths |> 
+  map(~vnp46A_to_wgs84(path =.x)) |> 
+  set_names(h5_filenames)
+names(dnbs[[1]])
+
+"DNB_BRDF-Corrected_NTL" 
+
+brdf_corrected <-  dnbs |> map(~.x[["DNB_BRDF-Corrected_NTL"]])
+
+brdf_corrected_mosaic <-  terra::mosaic(brdf_corrected[[1]],brdf_corrected[[2]],brdf_corrected[[3]],brdf_corrected[[4]],brdf_corrected[[5]],brdf_corrected[[6]])
+terra::writeRaster(brdf_corrected_mosaic,"VNP46A2.A2022065_brdf_wgs84_mosaic.tiff")
+
+```
+
+should really write a function to parse the days and mosaic
+
+```{r}
+
+vnp46A_mosaic_by_doy <- function(path){
+  #regext to get between second two dots
+  # then take last 3 digits
+  
+  
+}
+
+```
+
+
+
