@@ -1,0 +1,56 @@
+---
+title: 'UKR NTL: blackmaRble work-flow'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Intro
+
+This rmd demonstrates how to reproject and mosaic rasters downloaded from WorldView.
+
+Download data from LAADS world view and save h5 format rasters into folder in this directory call `ntl_h5`
+
+
+```{r cars}
+library(tidvverse)
+library(blackmaRble)
+library(here)
+library(terra)
+```
+
+## Reproject VNP46A data
+
+```{r pressure, echo=FALSE}
+
+h5_filenames <- list.files("ntl_h5/",pattern = "\\.h5$")
+h5_paths <- list.files("ntl_h5/", full.names = T,pattern = "\\.h5$")
+
+
+dnbs<- h5_paths |> 
+  map(~vnp46A_to_wgs84(path =.x)) |> 
+  set_names(h5_filenames)
+```
+
+## Subset bands
+
+```{r}
+# subset to just main band of interest for faster mosaicing
+dnb_radiance <- dnbs |> 
+  map(~.x |> subset("DNB_At_Sensor_Radiance_500m"))
+
+```
+
+
+# Mosaic & write rasters 
+```{r}
+# dir.create("raster/geotiff/mosaics/20220329_mosaics")
+if(write_batch){
+  ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance,output = "raster/geotiff/mosaics/20220329_mosaics")
+}
+
+```
+
+
