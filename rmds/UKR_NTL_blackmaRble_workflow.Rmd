@@ -15,7 +15,9 @@ Download data from LAADS world view and save h5 format rasters into folder in th
 
 
 ```{r cars}
-library(tidvverse)
+library(tidyverse)
+
+# devtools::install_github("zackarno/blackmaRble")
 library(blackmaRble)
 library(here)
 library(terra)
@@ -28,6 +30,9 @@ library(terra)
 
 ```{r pressure, echo=FALSE}
 # dir.create("ntl_h5")
+
+write_batch <-  c(T,F)[1] # toggle 1 for write outputs, 2 for no outputs
+
 h5_filenames <- list.files("ntl_h5/",pattern = "\\.h5$")
 h5_paths <- list.files("ntl_h5/", full.names = T,pattern = "\\.h5$")
 
@@ -62,7 +67,7 @@ dnb_radiance <- ntl_reprojected |>
 if(write_batch){
   ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance,output = "ntl_doy_tiffs")
 }
-
+# ntl_rad_by_doy$`084`
 ```
 
 
