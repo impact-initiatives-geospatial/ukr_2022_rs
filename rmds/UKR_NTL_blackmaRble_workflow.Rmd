@@ -24,7 +24,7 @@ library(terra)
 ## Reproject VNP46A data
 
 ```{r pressure, echo=FALSE}
-
+# dir.create("ntl_h5")
 h5_filenames <- list.files("ntl_h5/",pattern = "\\.h5$")
 h5_paths <- list.files("ntl_h5/", full.names = T,pattern = "\\.h5$")
 
@@ -46,9 +46,10 @@ dnb_radiance <- dnbs |>
 
 # Mosaic & write rasters 
 ```{r}
-# dir.create("raster/geotiff/mosaics/20220329_mosaics")
+# dir.create("ntl_doy_tiffs")
+
 if(write_batch){
-  ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance,output = "raster/geotiff/mosaics/20220329_mosaics")
+  ntl_rad_by_doy <-  mosaic_vnp46a_by_doy(dnb_radiance,output = "ntl_doy_tiffs")
 }
 
 ```
