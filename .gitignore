@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 /raster/*
-/20200315_ukr_kyiv_viirs_ntl/*
+/20220315_ukr_kyiv_viirs_ntl/*
 /vector/*
 /unosat_damage_analysis/*
 IMPACT_GIS.gdb
@@ -11,4 +11,6 @@ IMPACT_GIS.gdb
 *.xlsx
 *.tiff
 *.png
-
+*.zip
+*.JPG
+script_for_hsm.R
